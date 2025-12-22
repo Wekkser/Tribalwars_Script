@@ -2,7 +2,7 @@
 // @name         Script Extra Widgets Premium
 // @version      4.9.7
 // @description  Widgets available: Village Navigation Arrors; Adds a new column on the left of the main screen with: Village List, Notepad, Extra Build Queue(experimental); Maps extra options & Larger map view; Auto-Scavenging; Auto-Train Paladin and auto Paladins Training;
-// @author       killwilll
+// @author       Giulio Brazzo
 // @require      https://github.com/Wekkser/Tribalwars_Script/raw/master/utils.user.js
 // @require      https://github.com/Wekkser/Tribalwars_Script/raw/master/custom_css.user.js
 // @require      https://github.com/Wekkser/Tribalwars_Script/raw/master/settings_script.user.js
@@ -17,7 +17,7 @@
 // @require      https://github.com/Wekkser/Tribalwars_Script/raw/master/widget_recruitTroops.user.js
 // @updateURL    https://github.com/Wekkser/Tribalwars_Script/raw/master/main.user.js
 // @downloadURL  https://github.com/Wekkser/Tribalwars_Script/raw/master/main.user.js
-// @include      https://*.tribalwars.*/*
+// @match        https://*.tribals.it/*
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
