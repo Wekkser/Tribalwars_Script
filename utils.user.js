@@ -89,6 +89,7 @@ function prepareLocalStorageItems() {
     localStorage.setItem('mapConfig', localStorage.getItem('mapConfig') ?? '{}');
     localStorage.setItem('map_custom_height', localStorage.getItem('map_custom_height') ?? '600');
     localStorage.setItem('map_custom_width', localStorage.getItem('map_custom_width') ?? '900');
+    localStorage.setItem('autoScavengingActive', 'false');
 }
 
 function setCookieCurrentVillage() {
