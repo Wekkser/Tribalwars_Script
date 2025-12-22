@@ -54,5 +54,20 @@ var customCSS = `
     font-size: 87%;
     line-height: 11px;
 }
+
+.scavenge-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background-color: #c0392b; /* off */
+    box-shadow: inset 0 0 2px rgba(0,0,0,0.6);
+    vertical-align: middle;
+}
+
+.scavenge-indicator.active {
+    background-color: #27ae60; /* on */
+}
 `;
 GM_addStyle(customCSS);
