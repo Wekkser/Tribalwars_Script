@@ -252,19 +252,19 @@ function injectNavigationBar() {
         const tw_lang = JSON.parse(localStorage.getItem('tw_lang'));
         // Objeto com os links e imagens
         var urlsObject = {
-            "Main": {
+            "Quartier Generale": {
                 img: "https://dspt.innogamescdn.com/asset/7fe7ab60/graphic/buildings/mid/main3.png",
                 href: "/game.php?village=" + game_data.village.id + "&screen=main"
             },
-            "Recruitment": {
+            "Recluta": {
                 img: "https://dspt.innogamescdn.com/asset/243a567d/graphic/unit/att.png",
                 href: "/game.php?village=" + game_data.village.id + "&screen=train"
             },
-            "Smith": {
+            "Fabbro": {
                 img: "https://dspt.innogamescdn.com/asset/7fe7ab60/graphic/buildings/mid/smith2.png",
                 href: "/game.php?village=" + game_data.village.id + "&screen=smith"
             },
-            "Place": {
+            "Raduno": {
                 img: "https://dspt.innogamescdn.com/asset/7fe7ab60/graphic/buildings/mid/place1.png",
                 href: "/game.php?village=" + game_data.village.id + "&screen=place"
             },
