@@ -473,6 +473,7 @@ function addToBuildQueue(build_id) {
         callUpgradeBuilding(building_queue[0]);
         console.log("Nessun edificio specificato, prendo il primo dalla coda finta: " + building_queue[0]);
     }
+    console.log("Coda di costruzione attuale: " + localStorage.getItem('building_queue'));
 }
 
 function removeFromBuildQueue(build_index) {
@@ -591,6 +592,7 @@ function callRemoveFromActiveBuildingQueue(idToRemove) {
 }
 
 function updateBuildQueueTimers() {
+    console.log("Aggiornamento dei timer della coda di costruzione...");
     //Timeouts Extra Queue
     var building_queue = JSON.parse(localStorage.getItem('building_queue') || '[]');
     var waiting_for_queue = JSON.parse(localStorage.getItem('waiting_for_queue') || '{}');
@@ -603,7 +605,9 @@ function updateBuildQueueTimers() {
         var waitTime = (addToQueueDate.getTime() - Date.now());
         if (waitTime > 0) {
             setFunctionOnTimeOut('building_queue', addToBuildQueue, waitTime);
+            console.log("Build in attesa di risorse, attendo fino a: " + addToQueueDate.toLocaleString());
         } else {
+            console.log("Tempo di attesa risorse scaduto, procedo con la costruzione.");
             addToBuildQueue();
         }
     } else {
@@ -612,8 +616,10 @@ function updateBuildQueueTimers() {
             var nextTimeDate = new Date(parseInt(localStorage.getItem('building_queue_next_slot')));
             var waitTime = (nextTimeDate.getTime() - Date.now());
             if (waitTime > 0) {
+                console.log("Prossimo slot di costruzione disponibile alle: " + nextTimeDate.toLocaleString());
                 setFunctionOnTimeOut('building_queue', addToBuildQueue, waitTime);
             } else {
+                console.log("Slot di costruzione disponibile, procedo con la costruzione.");
                 addToBuildQueue();
             }
         }
