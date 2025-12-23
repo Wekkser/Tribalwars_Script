@@ -449,6 +449,7 @@ function setCancelBuildIds(cancelButtons) {
 }
 
 function addToBuildQueue(build_id) {
+    console.log("Aggiungo alla coda di costruzione: " + build_id);
     if (build_id) {
         if (!isBuildQueueFull && !JSON.parse(localStorage.getItem('waiting_for_queue')).buildId) {
             callUpgradeBuilding(build_id);
@@ -470,6 +471,7 @@ function addToBuildQueue(build_id) {
     } else {
         var building_queue = JSON.parse(localStorage.getItem('building_queue'));
         callUpgradeBuilding(building_queue[0]);
+        console.log("Nessun edificio specificato, prendo il primo dalla coda finta: " + building_queue[0]);
     }
 }
 
@@ -518,6 +520,7 @@ async function removeFromActiveBuildQueue(build_index) {
 }
 
 function callUpgradeBuilding(id) {
+    console.log("Chiamata per l'aggiornamento dell'edificio: " + id);
     $.ajax({
         'url': game_data.link_base_pure + 'main&action=upgrade_building&id=' + id + '&type=main&h=' + game_data.csrf,
         'type': 'GET',
