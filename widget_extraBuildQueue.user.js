@@ -104,6 +104,47 @@ function injectBuildQueue(availableBuildingsImgs, buildingImgs, availableBuildin
     extraBuildDiv.appendChild(buildsListTable);
 
     createWidgetElement({ identifier: 'Building Queue', contents: extraBuildDiv, columnToUse, update, extra_name: '', description: '' });
+
+    // ------------------------------------------------------------ //
+    const btn = document.createElement('a');
+    btn.href = '#';
+    btn.classList.add('btn', 'current-quest');
+    btn.textContent = 'Automatic Build and Scavenge';
+    extraBuildDiv.appendChild(btn);
+
+    autoScavengingActive = localStorage.getItem('autoScavengingActive') === 'true';
+    const indicator = document.createElement('span');
+    indicator.classList.add('scavenge-indicator');
+    btn.onclick = async function (e) {
+        e.preventDefault();
+
+        if (!autoScavengingActive) {
+            autoScavengingActive = true;
+            localStorage.setItem('autoScavengingActive', 'true');
+            console.log(localStorage.getItem('autoScavengingActive'));
+            await new Promise(r => setTimeout(r, 3 * 1000));
+            window.location.href = "/game.php?village=" + game_data.village.id + "&screen=place&mode=scavenge";
+        } else {
+            autoScavengingActive = false;
+            localStorage.setItem('autoScavengingActive', 'false');
+            stopAutoScavengingLoop();
+        }
+
+        updateUI();
+    };
+
+    function updateUI() {
+        if (autoScavengingActive) {
+            btn.textContent = 'Stop Auto Scavenge';
+            indicator.classList.add('active');
+            indicator.title = 'Auto Scavenge attivo';
+        } else {
+            btn.textContent = 'Start Auto Scavenge';
+            indicator.classList.remove('active');
+            indicator.title = 'Auto Scavenge disattivato';
+        }
+    }
+    updateUI();
 }
 
 function getCurrentQueueListElement(tempElement, allBuildingsImgs) {
@@ -520,6 +561,9 @@ function callUpgradeBuilding(id) {
             }
         }
     });
+    if (autoScavengingActive) {
+        window.location.href = "/game.php?village=" + game_data.village.id + "&screen=place&mode=scavenge";
+    }
 }
 
 function callRemoveFromActiveBuildingQueue(idToRemove) {
