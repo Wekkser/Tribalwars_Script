@@ -89,7 +89,7 @@ function prepareLocalStorageItems() {
     localStorage.setItem('mapConfig', localStorage.getItem('mapConfig') ?? '{}');
     localStorage.setItem('map_custom_height', localStorage.getItem('map_custom_height') ?? '600');
     localStorage.setItem('map_custom_width', localStorage.getItem('map_custom_width') ?? '900');
-    localStorage.setItem('autoScavengingActive', 'false');
+    localStorage.setItem('autoScavengingActive', localStorage.getItem('autoScavengingActive') ?? 'false');
 }
 
 function setCookieCurrentVillage() {
@@ -762,22 +762,29 @@ function start() {
             setInterval(() => checkInactivity(maxInactiveMin), 30000);
         }
 
-        //Override the sortable update function from Tribalwars
-        var originalSortableUpdate = $("#overviewtable").sortable("option", "update");
-        $("#overviewtable").sortable("option", "update", function () {
-            saveColumnOrder(this);
-            if (typeof originalSortableUpdate === "function" && !arguments[1].item[0].classList.contains('script_widget')) {
-                $(this).find('.script_widget').detach();
-                originalSortableUpdate.apply(this, arguments);
-                
-                settings_cookies.widgets.forEach(function (widget) {
-                    var functionName = widgetsInjectFunctions[widget.name];
-                    if (functionName) {
-                        functionName(widget.column);
-                    }
-                });
-            }
-        });
+        const table = $("#overviewtable");
+
+        if (table.length && table.data("ui-sortable")) {
+            const originalSortableUpdate = table.sortable("option", "update");
+            table.sortable("option", "update", function () {
+                saveColumnOrder(this);
+                if (
+                    typeof originalSortableUpdate === "function" &&
+                    !arguments[1].item[0].classList.contains('script_widget')
+                ) {
+                    $(this).find('.script_widget').detach();
+                    originalSortableUpdate.apply(this, arguments);
+
+                    settings_cookies.widgets.forEach(function (widget) {
+                        const functionName = widgetsInjectFunctions[widget.name];
+                        if (functionName) {
+                            functionName(widget.column);
+                        }
+                    });
+                }
+            });
+        }
+
     }
 }
 
