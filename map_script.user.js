@@ -383,18 +383,7 @@ function setMapSize() {
             img.style.height = 'auto';
         });
 
-        // Remove o container antigo e recria o mapa
-        extraMapContainer.remove();
-        goHomeBoundarie.remove(); //it will generate again
-        TWMap.size = [9, 9];
-        TWMap.init();
-
-        wait(1).then(() => {
-            // Captura a parte do hash da URL (depois do #)
-            const hash = window.location.hash.substring(1); // Remove o #
-            
-            TWMap.focusSubmit();
-        });
+        
         
     }
 }

@@ -738,7 +738,7 @@ function start() {
                     functionName(widget.column);
                 }
             });
-        } else if (urlPage.includes("&screen=place&mode=scavenge")) {
+        } else if (urlPage.split("&")[2] === "mode=scavenge") {
             $(document).ready(function () {
                 injectAutoScavengingOption();
             });

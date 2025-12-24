@@ -32,7 +32,8 @@ function waitForScavengeTable(callback) {
     }, 100);
 }
 
-let waitTd = null; // riferimento globale alla cella di stato
+let waitScavengeText = null; // riferimento globale alla cella di stato
+let waitBuildingText = null;
 
 function injectAutoScavengingOption() {
     waitForScavengeTable(function (tbody) {
@@ -119,21 +120,22 @@ function injectAutoScavengingOption() {
         tr.appendChild(controlTd);
 
         /* TD per countdown */
-        waitTd = document.createElement('td');
-        waitTd.id = 'autoScavengeWaitTd';
-        waitTd.style.fontWeight = 'bold';
-        waitTd.colSpan = 2;
-        tr.appendChild(waitTd);
+        waitScavengeText = document.createElement('td');
+        waitScavengeText.id = 'waitScavengeTextTd';
+        waitScavengeText.style.fontWeight = 'bold';
+        waitScavengeText.colSpan = 2;
+        tr.appendChild(waitScavengeText);
 
-        /* filler */
-        const fillerTd = document.createElement('td');
-        tr.appendChild(fillerTd);
+        /* TD per countdown */
+        waitBuildingText = document.createElement('td');
+        waitBuildingText.id = 'waitBuildingTextTd';
+        waitBuildingText.style.fontWeight = 'bold';
+        waitBuildingText.colSpan = 1;
+        tr.appendChild(waitBuildingText);
 
         tbody.appendChild(tr);
     });
 }
-
-
 
 // Ottieni unità disponibili dalla pagina
 function getUnitsAvailable() {
@@ -219,8 +221,6 @@ async function sendScavengeAjax(slot, units) {
     }
 }
 
-
-
 // Distribuisce unità in base al carry_max dei rovistamenti disponibili e ai fattori di peso
 function distributeUnitsProportionalFixed(unitsAvailable, slots) {
     // calcola il totale dei pesi dei slot disponibili
@@ -242,10 +242,10 @@ function distributeUnitsProportionalFixed(unitsAvailable, slots) {
     return plan;
 }
 
-
 async function startAutoScavengingLoop() {
     await waitForGameReady();
     await waitForWaitTd();
+
     if (game_data.screen !== "place") {
         console.log("Non sono in scavenge, loop sospeso");
         return;
@@ -255,114 +255,72 @@ async function startAutoScavengingLoop() {
         const slots = getScavengeSlots();
         const freeSlots = slots.filter(s => !s.busy);
 
-        const buildingQueue = JSON.parse(localStorage.getItem('building_queue') || '[]');
-        const nextSlot = parseInt(localStorage.getItem('building_queue_next_slot') || '0');
-        const now = Date.now();
-
         if (freeSlots.length) {
             const unitsAvailable = getUnitsAvailable();
             const plan = distributeUnitsProportionalFixed(unitsAvailable, freeSlots);
 
             for (const slot of freeSlots) {
-                await sendScavengeAjax(slot, plan[slot.slotId]);
-                showAutoHideBox(`Slot ${slot.slotId} inviato`, true);
-                console.log(`Slot ${slot.slotId} inviato`);
+                if (!slot.busy){
+                    await sendScavengeAjax(slot, plan[slot.slotId]);
+                    showAutoHideBox(`Slot ${slot.slotId} inviato`, true);
+                    console.log(`Slot ${slot.slotId} inviato`);
 
-                slot.busy = true;
-                console.log(`Rovistamento n:${slot.slotId} inviato`);
-                // jitter umano tra invii
-                const jitter = 800 + Math.random() * 1200;
-                await new Promise(r => setTimeout(r, jitter));
+                    slot.busy = true;
+                    console.log(`Rovistamento n:${slot.slotId} inviato`);
+                    // jitter umano tra invii
+                    const jitter = 800 + Math.random() * 1200;
+                    await new Promise(r => setTimeout(r, jitter));
+                }
             }
 
             showAutoHideBox(`Tutti i rovistamenti inviati`, true);
             sendTelegramMessage(`✅ Rovistamenti inviato!`);
             console.log(`Tutti inviati`);
-
+            
+            const jitter = 800 + Math.random() * 1200;
+            await new Promise(r => setTimeout(r, jitter));
             location.reload();
 
         } else {
+            const buildingQueue = JSON.parse(localStorage.getItem('building_queue') || '[]');
+            const now = Date.now();
+            const nextSlot = parseInt(localStorage.getItem('building_queue_next_slot') || '0') - now;
+
             // Nessun slot libero: calcola tempo minimo di attesa
             const countdowns = slots.map(s => s.returnCountdownSec).filter(t => t > 0);
             let minScavenge = countdowns.length ? Math.min(...countdowns) : 30; // default 30s
-            const randomBuffer = 10 + Math.random() * 5; // 5-10 sec di buffer
-            minScavenge += randomBuffer;
-
-            // Considera anche slot costruzione
-            let waitTime = minScavenge;
-            let textWait = "Scavenge";
-            
-            // esiste un edificio in coda?
-            if (buildingQueue.length != 0 && nextSlot > now) {
-                const buildWait = (nextSlot - now) / 1000;
-
-                waitTime = Math.min(waitTime, buildWait);
-                if (waitTime === buildWait){
-                    textWait = "Building";
-                }else{
-                    textWait = "Scavange";
-                }
-            }
+            minScavenge += 10 + Math.random() * 5;
 
             // Countdown dinamico
-            let remaining = waitTime;
+            let remainingScavengeTime = minScavenge;
+            let remainingBuildingTime = nextSlot;
 
-            while (remaining > 0 && autoScavengingActive) {
+            let waitScavenge = "Scavenge";
+            let waitBuilding = "Building";
 
-                waitTd.textContent = `Prossimo ${textWait}: ${secondsToHMS(remaining)}`;
+            while (remainingScavengeTime > 0 && autoScavengingActive) {
+                waitScavengeText.textContent = `Prossimo ${waitScavenge}: ${secondsToHMS(remainingScavengeTime)}`;
+                
+                if (buildingQueue.length != 0 && remainingBuildingTime > 0) {
+                    waitBuildingText.textContent = `Prossimo ${waitBuilding}: ${formatQeueNextSlot(remainingBuildingTime)}`;
+                }
                 await new Promise(r => setTimeout(r, 1000));
-                remaining--;
-            }
-
-            let building_queue_active = JSON.parse(localStorage.getItem('building_queue_active') || '[]');
-            let queueFree = building_queue_active.length <= 1;
-
-            // Dopo la wait, tentiamo di avviare eventuale costruzione
-            if (queueFree && nextSlot <= Date.now() && buildingQueue.length) {
-                const buildId = buildingQueue[0]; // prossimo edificio
-
-                // aggiorna i costi direttamente da main
-                const buildingsData = await fetchBuildingCostsFromMain(game_data.village.id);
-
-                const buildInfo = buildingsData[buildId];
-                if (!buildInfo) {
-                    console.log(`Costi edificio ${buildId} non trovati`);
-                    return;
-                }
-
-                const village = game_data.village;
-                const enoughResources = village.wood >= buildInfo.wood &&
-                                        village.stone >= buildInfo.stone &&
-                                        village.iron >= buildInfo.iron;
-
-                if (enoughResources && buildingQueue.length > 0) {
-                    // Risorse sufficienti: invio edificio
-                    buildingQueue.shift();
-                    localStorage.setItem('building_queue', JSON.stringify(buildingQueue));
-
-                    console.log(`Slot costruzione libero, avvio edificio: ${buildId}`);
-                    callUpgradeBuildingHeadless(buildId);
-                    sendTelegramMessage(`🏗️ Costruzione edificio avviata: ${buildId}`);
-                } else {
-                    console.log(`Risorse insufficienti per costruire ${buildId}. Attendo accumulo risorse.`);
-                    sendTelegramMessage(`⚠️ Risorse insufficienti per costruire edificio: ${buildId}`);
-                }
-            } else {
-                console.log(`Slot non libero per costruzione. QueueFree: ${queueFree}`);
+                remainingScavengeTime--;
+                remainingBuildingTime -= 1000;
             }
         }
+
     }
 
     console.log('Auto Scavenging fermato');
 }
 
 async function waitForWaitTd() {
-    while (!waitTd) {
+    while (!waitScavengeText) {
         await new Promise(r => setTimeout(r, 50)); // check ogni 50ms
     }
-    return waitTd;
+    return waitScavengeText;
 }
-
 
 // Ferma loop
 function stopAutoScavengingLoop() {
@@ -375,6 +333,7 @@ function stopAutoScavengingLoop() {
     }
 }
 
+// --------- TIME FUNCTIONS ----------- //
 function hmsToMs(ms){
     const [h, m, s] = ms.split(':').map(Number);
     return (h * 3600 + m * 60 + s) * 1000;
@@ -412,6 +371,13 @@ function secondsToHMS(sec) {
         s.toString().padStart(2, '0')
     ].join(':');
 }
+
+function formatQeueNextSlot(remainingTime){
+    const totalSeconds = Math.max(0, Math.floor(remainingTime / 1000));
+    return secondsToHMS(totalSeconds);
+}
+
+// --------- ------------- ------------ //
 
 function waitForGameReady() {
     return new Promise(resolve => {
