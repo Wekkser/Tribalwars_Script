@@ -548,7 +548,6 @@ function callRemoveFromActiveBuildingQueue(idToRemove) {
 }
 
 function updateBuildQueueTimers() {
-    console.log("Aggiornamento dei timer della coda di costruzione...");
     //Timeouts Extra Queue
     var building_queue = JSON.parse(localStorage.getItem('building_queue') || '[]');
     var waiting_for_queue = JSON.parse(localStorage.getItem('waiting_for_queue') || '{}');
@@ -572,7 +571,6 @@ function updateBuildQueueTimers() {
             var nextTimeDate = new Date(parseInt(localStorage.getItem('building_queue_next_slot')));
             var waitTime = (nextTimeDate.getTime() - Date.now());
             if (waitTime > 0) {
-                console.log("Prossimo slot di costruzione disponibile alle: " + nextTimeDate.toLocaleString());
                 setFunctionOnTimeOut('building_queue', addToBuildQueue, waitTime);
             } else {
                 console.log("Slot di costruzione disponibile, procedo con la costruzione.");
