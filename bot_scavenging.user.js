@@ -1,5 +1,3 @@
-import { TG_TOKEN, TG_CHAT_ID } from './tg_var.js';
-
 // Nomi livelli di scavenger
 const SCAVENGE_NAMES = ["Razziatore svogliato", "Trasportatori Umili", "Rovistamento astuto", "Ottimi Raccoglitori"];
 // Capacità delle unità (per eventuali calcoli)
@@ -33,6 +31,8 @@ function waitForScavengeTable(callback) {
         }
     }, 100);
 }
+
+let waitTd = null; // riferimento globale alla cella di stato
 
 function injectAutoScavengingOption() {
     waitForScavengeTable(function (tbody) {
@@ -118,6 +118,13 @@ function injectAutoScavengingOption() {
         controlTd.appendChild(indicator);
         tr.appendChild(controlTd);
 
+        /* TD per countdown */
+        waitTd = document.createElement('td');
+        waitTd.id = 'autoScavengeWaitTd';
+        waitTd.style.fontWeight = 'bold';
+        waitTd.colSpan = 2;
+        tr.appendChild(waitTd);
+
         /* filler */
         const fillerTd = document.createElement('td');
         tr.appendChild(fillerTd);
@@ -125,6 +132,7 @@ function injectAutoScavengingOption() {
         tbody.appendChild(tr);
     });
 }
+
 
 
 // Ottieni unità disponibili dalla pagina
@@ -237,7 +245,7 @@ function distributeUnitsProportionalFixed(unitsAvailable, slots) {
 
 async function startAutoScavengingLoop() {
     await waitForGameReady();
-
+    await waitForWaitTd();
     if (game_data.screen !== "place") {
         console.log("Non sono in scavenge, loop sospeso");
         return;
@@ -296,16 +304,11 @@ async function startAutoScavengingLoop() {
                 }
             }
 
-            controlTd = document.getElementById('auto_scavenging_control').lastChild;
-            // Aggiungi riga di stato attesa
-            waitTd = document.createElement('td');
-            controlTd.appendChild(waitTd);
-            waitTd.id = 'autoScavengeWaitTd';
-            waitTd.style.fontWeight = 'bold';
-
             // Countdown dinamico
             let remaining = waitTime;
+
             while (remaining > 0 && autoScavengingActive) {
+
                 waitTd.textContent = `Prossimo ${textWait}: ${secondsToHMS(remaining)}`;
                 await new Promise(r => setTimeout(r, 1000));
                 remaining--;
@@ -332,7 +335,7 @@ async function startAutoScavengingLoop() {
                                         village.stone >= buildInfo.stone &&
                                         village.iron >= buildInfo.iron;
 
-                if (enoughResources) {
+                if (enoughResources && buildingQueue.length > 0) {
                     // Risorse sufficienti: invio edificio
                     buildingQueue.shift();
                     localStorage.setItem('building_queue', JSON.stringify(buildingQueue));
@@ -347,14 +350,18 @@ async function startAutoScavengingLoop() {
             } else {
                 console.log(`Slot non libero per costruzione. QueueFree: ${queueFree}`);
             }
-
-
         }
     }
 
     console.log('Auto Scavenging fermato');
 }
 
+async function waitForWaitTd() {
+    while (!waitTd) {
+        await new Promise(r => setTimeout(r, 50)); // check ogni 50ms
+    }
+    return waitTd;
+}
 
 
 // Ferma loop
@@ -426,6 +433,9 @@ function waitForGameReady() {
                     // overview villaggio
                     (screen === "overview" && $("#overviewtable").length) ||
 
+                    // table
+                    (screen === "scavenge" && $("#auto_scavenging_control.lastChild")) ||
+
                     // fallback generico
                     $(".maincell").length
                 );
@@ -459,15 +469,17 @@ function callUpgradeBuildingHeadless(buildId) {
 }
 
 function sendTelegramMessage(message) {
-    fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            chat_id: TG_CHAT_ID,
-            text: message,
-            parse_mode: "HTML" // opzionale, puoi usare HTML per formattare
-        })
-    }).catch(err => console.error("Errore Telegram:", err));
+    if (TG_TOKEN && TG_CHAT_ID){
+        fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: TG_CHAT_ID,
+                text: message,
+                parse_mode: "HTML" // opzionale, puoi usare HTML per formattare
+            })
+        }).catch(err => console.error("Errore Telegram:", err));    
+    }
 }
 
 
